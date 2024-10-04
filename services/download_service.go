@@ -19,7 +19,7 @@ func NewDownloadService(processors map[string]domain.CSVProcessor) *DownloadServ
 }
 
 // Download gera e retorna o CSV filtrado com base no domínio e filtros fornecidos
-func (s *DownloadService) Download(domain string, filters map[string]string) ([]byte, error) {
+func (s *DownloadService) Download(domain string, filters []domain.Filter) ([]byte, error) {
 	processor, exists := s.processors[domain]
 	if !exists {
 		return nil, fmt.Errorf("não há processador registrado para o domínio: %s", domain)
