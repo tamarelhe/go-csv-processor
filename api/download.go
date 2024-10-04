@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/tamarelhe/go-csv-processor/domain"
 	"github.com/tamarelhe/go-csv-processor/services"
@@ -51,9 +52,13 @@ func DownloadCSVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	now := time.Now()
+	formattedTime := now.Format("20060102_150405")
+	content := fmt.Sprintf("attachment;filename=%s_%s.csv", req.Domain, formattedTime)
+
 	// Configura o cabeçalho HTTP para download de arquivo CSV
 	w.Header().Set("Content-Type", "text/csv")
-	w.Header().Set("Content-Disposition", "attachment;filename=filtered_data.csv")
+	w.Header().Set("Content-Disposition", content)
 
 	// Escreve os dados do CSV no corpo da resposta HTTP
 	w.Write(csvData)

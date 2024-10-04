@@ -2,9 +2,11 @@ package domain
 
 import "io"
 
-type BaseCSVProcessor struct {
-	HasHeader bool
-	Delimiter rune
+// CSVFileDescriptor descreve a estrutura de um arquivo CSV
+type CSVFileDescriptor struct {
+	HasHeader bool     // Se o CSV tem cabeçalho
+	Delimiter rune     // Delimitador do CSV
+	Columns   []string // Nomes das colunas esperadas
 }
 
 // Filter representa um filtro aplicado no CSV
@@ -21,8 +23,8 @@ type CSVProcessor interface {
 	GenerateCSV(filters []Filter) ([]byte, error)
 }
 
-func NewBaseCSVProcessor(hasHeader bool, delimiter rune) *BaseCSVProcessor {
-	return &BaseCSVProcessor{
+func NewBaseCSVProcessor(hasHeader bool, delimiter rune) *CSVFileDescriptor {
+	return &CSVFileDescriptor{
 		HasHeader: hasHeader,
 		Delimiter: delimiter,
 	}
