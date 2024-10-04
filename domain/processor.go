@@ -21,7 +21,7 @@ type CSVProcessor interface {
 	GenerateCSV(filters []Filter) ([]byte, error)
 }
 
-func NewCSVProcessor(hasHeader bool, delimiter rune) *BaseCSVProcessor {
+func NewBaseCSVProcessor(hasHeader bool, delimiter rune) *BaseCSVProcessor {
 	return &BaseCSVProcessor{
 		HasHeader: hasHeader,
 		Delimiter: delimiter,
