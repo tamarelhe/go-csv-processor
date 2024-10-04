@@ -2,7 +2,7 @@ package domain
 
 import "io"
 
-type Processor struct {
+type BaseCSVProcessor struct {
 	HasHeader bool
 	Delimiter rune
 }
@@ -21,8 +21,8 @@ type CSVProcessor interface {
 	GenerateCSV(filters []Filter) ([]byte, error)
 }
 
-func NewProcessor(hasHeader bool, delimiter rune) *Processor {
-	return &Processor{
+func NewCSVProcessor(hasHeader bool, delimiter rune) *BaseCSVProcessor {
+	return &BaseCSVProcessor{
 		HasHeader: hasHeader,
 		Delimiter: delimiter,
 	}
