@@ -10,7 +10,7 @@ import (
 	"github.com/tamarelhe/go-csv-processor/services"
 )
 
-// Estrutura para representar a requisição de download com filtros
+// Structure to represent the download request with filters
 type DownloadRequest struct {
 	Domain  string          `json:"domain"`
 	Filters []domain.Filter `json:"filters"`
@@ -18,37 +18,37 @@ type DownloadRequest struct {
 
 var downloadService *services.DownloadService
 
-// InitDownloadAPI inicializa a API com o serviço de download
+// Initializes the API with the download service
 func InitDownloadAPI(service *services.DownloadService) {
 	downloadService = service
 }
 
-// DownloadCSVHandler faz o download do CSV filtrado com base nos filtros enviados no body
+// Downloads the filtered CSV based on the filters sent in the body
 func DownloadCSVHandler(w http.ResponseWriter, r *http.Request) {
-	// Apenas aceita requisições POST
+	// Only accepts POST requests
 	if r.Method != http.MethodPost {
-		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Decodifica o corpo da requisição JSON para a estrutura DownloadRequest
+	// Decodes the JSON request body into the DownloadRequest structure
 	var req DownloadRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Erro ao processar o corpo da requisição", http.StatusBadRequest)
+		http.Error(w, "Error processing the request body", http.StatusBadRequest)
 		return
 	}
 
-	// Verifica se o domínio foi especificado
+	// Checks that the domain has been specified
 	if req.Domain == "" {
-		http.Error(w, "Domínio não fornecido", http.StatusBadRequest)
+		http.Error(w, "domain not provided", http.StatusBadRequest)
 		return
 	}
 
-	// Chama o serviço genérico de download para gerar o CSV
+	// Calls the generic download service to generate the CSV
 	csvData, err := downloadService.Download(req.Domain, req.Filters)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Erro ao gerar CSV: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error generating CSV: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -56,10 +56,10 @@ func DownloadCSVHandler(w http.ResponseWriter, r *http.Request) {
 	formattedTime := now.Format("20060102_150405")
 	content := fmt.Sprintf("attachment;filename=%s_%s.csv", req.Domain, formattedTime)
 
-	// Configura o cabeçalho HTTP para download de arquivo CSV
+	// Configures HTTP header for CSV file download
 	w.Header().Set("Content-Type", "text/csv")
 	w.Header().Set("Content-Disposition", content)
 
-	// Escreve os dados do CSV no corpo da resposta HTTP
+	// Writes the CSV data in the body of the HTTP response
 	w.Write(csvData)
 }

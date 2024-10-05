@@ -9,26 +9,26 @@ import (
 
 var progressService *services.ProgressService
 
-// InitProgressAPI inicializa a API com o serviço de progresso
+// Initializes the API with the progress service
 func InitProgressAPI(service *services.ProgressService) {
 	progressService = service
 }
 
-// ProgressHandler retorna o progresso do upload assíncrono
+// Returns the progress of the asynchronous upload
 func ProgressHandler(w http.ResponseWriter, r *http.Request) {
 	uploadID := r.URL.Query().Get("upload_id")
 	if uploadID == "" {
-		http.Error(w, "upload_id não fornecido", http.StatusBadRequest)
+		http.Error(w, "upload_id not provided", http.StatusBadRequest)
 		return
 	}
 
-	// Obtém o progresso do upload através do serviço
+	// Get the upload progress through the service
 	progress := progressService.GetProgress(uploadID)
 	response := map[string]interface{}{
 		"upload_id": uploadID,
 		"progress":  progress,
 	}
 
-	// Retorna o progresso em formato JSON
+	// Returns progress in JSON format
 	json.NewEncoder(w).Encode(response)
 }

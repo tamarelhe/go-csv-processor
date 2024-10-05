@@ -13,19 +13,18 @@ func InitUploadAPI(service *services.UploadService) {
 	uploadService = service
 }
 
-// UploadCSVHandler faz o upload de um CSV de forma genérica
+// Generic uploads a CSV API
 func UploadCSVHandler(w http.ResponseWriter, r *http.Request) {
 	file, _, err := r.FormFile("csv")
 	if err != nil {
-		http.Error(w, "Erro ao ler CSV", http.StatusBadRequest)
+		http.Error(w, "Error reading CSV", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
 
 	domain := r.FormValue("domain")
-	uploadID := "some-upload-id" // Exemplo: você poderia usar um UUID aqui
 
-	err = uploadService.Upload(domain, file, uploadID)
+	uploadID, err := uploadService.Upload(domain, file)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
