@@ -2,7 +2,9 @@ package services
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"encoding/csv"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -42,6 +44,24 @@ func generateUploadID(domain string) string {
 	result := fmt.Sprintf("%s-%s", strings.ToUpper(domain), ulidGenerated.String())
 
 	return result
+}
+
+// Generates UploadID
+func generateRecordHash(record []string, descriptor domain.CSVFileDescriptor) ([]string, string, error) {
+	var inputs []string
+
+	for i, column := range descriptor.Columns {
+		if column.IsInputColumn {
+			inputs = append(inputs, record[i])
+		}
+	}
+
+	concatenatedString := strings.Join(inputs, " ")
+	hash := sha256.Sum256([]byte(concatenatedString))
+	hashString := hex.EncodeToString(hash[:])
+
+	record = append(record, hashString)
+	return record, hashString, nil
 }
 
 // Validate header length and columns position
@@ -95,6 +115,7 @@ func validateRecord(record []string, descriptor domain.CSVFileDescriptor) error 
 // Processes the CSV according to the domain and monitors progress
 func (s *UploadService) Upload(domain string, file io.Reader) (string, error) {
 	var recordNumber int
+	uniqueHashes := make(map[string]struct{})
 
 	uploadID := generateUploadID(domain)
 
@@ -130,6 +151,7 @@ func (s *UploadService) Upload(domain string, file io.Reader) (string, error) {
 	s.mu.Unlock()
 
 	if descriptor.HasHeader {
+		recordNumber++
 		header, err := csvReader.Read()
 		if err != nil {
 			return "", fmt.Errorf("error reading the header: %v", err)
@@ -157,7 +179,22 @@ func (s *UploadService) Upload(domain string, file io.Reader) (string, error) {
 			return "", fmt.Errorf("invalid record [%d]: %v", recordNumber, err)
 		}
 
-		//fmt.Println(record)
+		rec, hash, err := generateRecordHash(record, descriptor)
+		if err != nil {
+			return "", fmt.Errorf("invalid record [%d]: %v", recordNumber, err)
+		}
+
+		if descriptor.ValidateUniqueness {
+			// Validates uniqueness of record
+			if _, exists := uniqueHashes[hash]; exists {
+				return "", fmt.Errorf("duplicated record: %d", recordNumber)
+			}
+
+			// Add hash to map
+			uniqueHashes[hash] = struct{}{}
+		}
+
+		fmt.Println(rec)
 		//if err := processor.ProcessRecord(uploadID, record); err != nil {
 		//	return "", fmt.Errorf("erro ao processar linha: %v", err)
 		//}

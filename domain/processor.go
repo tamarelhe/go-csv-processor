@@ -37,15 +37,17 @@ const FormatDate = "02/01/2006"
 const FormatDateTime = "02/01/2006 15:04:05"
 
 type Column struct {
-	Label string
-	Type  ColumnType
+	Label         string
+	Type          ColumnType
+	IsInputColumn bool
 }
 
 // Describes the structure of a CSV file
 type CSVFileDescriptor struct {
-	HasHeader bool
-	Delimiter rune
-	Columns   []Column
+	HasHeader          bool
+	Delimiter          rune
+	Columns            []Column
+	ValidateUniqueness bool
 }
 
 // Represents a filter applied to the CSV
@@ -63,11 +65,12 @@ type CSVProcessor interface {
 	GetDescriptor() CSVFileDescriptor
 }
 
-func NewBaseCSVProcessor(hasHeader bool, delimiter rune, columns []Column) *CSVFileDescriptor {
+func NewBaseCSVProcessor(hasHeader bool, delimiter rune, columns []Column, validateUniqueness bool) *CSVFileDescriptor {
 	return &CSVFileDescriptor{
-		HasHeader: hasHeader,
-		Delimiter: delimiter,
-		Columns:   columns,
+		HasHeader:          hasHeader,
+		Delimiter:          delimiter,
+		Columns:            columns,
+		ValidateUniqueness: validateUniqueness,
 	}
 }
 

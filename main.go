@@ -15,13 +15,18 @@ import (
 func main() {
 
 	// Inicializa os processadores específicos de domínio com as configurações desejadas
-	po_processor := purchase_order.NewPOProcessor(true, ';', []domain.Column{
-		{Label: "supplier", Type: domain.String},
-		{Label: "delivery_date", Type: domain.Date},
-		{Label: "item", Type: domain.String},
-		{Label: "location", Type: domain.Int},
-		{Label: "quantity", Type: domain.Float},
-	})
+	po_processor := purchase_order.NewPOProcessor(
+		true,
+		';',
+		[]domain.Column{
+			{Label: "supplier", Type: domain.String, IsInputColumn: true},
+			{Label: "delivery_date", Type: domain.Date, IsInputColumn: true},
+			{Label: "item", Type: domain.String, IsInputColumn: true},
+			{Label: "location", Type: domain.Int, IsInputColumn: true},
+			{Label: "quantity", Type: domain.Float, IsInputColumn: true},
+			{Label: "column_control", Type: domain.Float, IsInputColumn: false},
+		},
+		false)
 
 	processors := map[string]domain.CSVProcessor{
 		"purchase_order": po_processor,
