@@ -19,13 +19,13 @@ func main() {
 		true,
 		';',
 		[]domain.Column{
-			{Label: "supplier", Type: domain.String, IsInputColumn: true},
-			{Label: "delivery_date", Type: domain.Date, IsInputColumn: true},
-			{Label: "item", Type: domain.String, IsInputColumn: true},
-			{Label: "location", Type: domain.Int, IsInputColumn: true},
-			{Label: "quantity", Type: domain.Float, IsInputColumn: true},
-			{Label: "column_control", Type: domain.Float, IsInputColumn: false},
+			{Label: "supplier", Type: domain.String, IsInputColumn: true, KeyColumn: true},
+			{Label: "delivery_date", Type: domain.Date, IsInputColumn: true, KeyColumn: true},
+			{Label: "item", Type: domain.String, IsInputColumn: true, KeyColumn: true},
+			{Label: "location", Type: domain.Int, IsInputColumn: true, KeyColumn: true},
+			{Label: "quantity", Type: domain.Float, IsInputColumn: true, KeyColumn: false},
 		},
+		true,
 		false)
 
 	processors := map[string]domain.CSVProcessor{

@@ -40,6 +40,7 @@ type Column struct {
 	Label         string
 	Type          ColumnType
 	IsInputColumn bool
+	KeyColumn     bool
 }
 
 // Describes the structure of a CSV file
@@ -48,6 +49,7 @@ type CSVFileDescriptor struct {
 	Delimiter          rune
 	Columns            []Column
 	ValidateUniqueness bool
+	CUDControl         bool
 }
 
 // Represents a filter applied to the CSV
@@ -65,12 +67,13 @@ type CSVProcessor interface {
 	GetDescriptor() CSVFileDescriptor
 }
 
-func NewBaseCSVProcessor(hasHeader bool, delimiter rune, columns []Column, validateUniqueness bool) *CSVFileDescriptor {
+func NewBaseCSVProcessor(hasHeader bool, delimiter rune, columns []Column, validateUniqueness bool, cudControl bool) *CSVFileDescriptor {
 	return &CSVFileDescriptor{
 		HasHeader:          hasHeader,
 		Delimiter:          delimiter,
 		Columns:            columns,
 		ValidateUniqueness: validateUniqueness,
+		CUDControl:         cudControl,
 	}
 }
 

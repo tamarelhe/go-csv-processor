@@ -48,15 +48,15 @@ func generateUploadID(domain string) string {
 
 // Generates UploadID
 func generateRecordHash(record []string, descriptor domain.CSVFileDescriptor) ([]string, string, error) {
-	var inputs []string
+	var columnsKey []string
 
 	for i, column := range descriptor.Columns {
-		if column.IsInputColumn {
-			inputs = append(inputs, record[i])
+		if column.KeyColumn {
+			columnsKey = append(columnsKey, record[i])
 		}
 	}
 
-	concatenatedString := strings.Join(inputs, " ")
+	concatenatedString := strings.Join(columnsKey, " ")
 	hash := sha256.Sum256([]byte(concatenatedString))
 	hashString := hex.EncodeToString(hash[:])
 
@@ -115,7 +115,7 @@ func validateRecord(record []string, descriptor domain.CSVFileDescriptor) error 
 // Processes the CSV according to the domain and monitors progress
 func (s *UploadService) Upload(domain string, file io.Reader) (string, error) {
 	var recordNumber int
-	uniqueHashes := make(map[string]struct{})
+	uniqueHashes := make(map[string]int)
 
 	uploadID := generateUploadID(domain)
 
@@ -186,12 +186,12 @@ func (s *UploadService) Upload(domain string, file io.Reader) (string, error) {
 
 		if descriptor.ValidateUniqueness {
 			// Validates uniqueness of record
-			if _, exists := uniqueHashes[hash]; exists {
-				return "", fmt.Errorf("duplicated record: %d", recordNumber)
+			if origRec, exists := uniqueHashes[hash]; exists {
+				return "", fmt.Errorf("line %d is duplicated with line %d", recordNumber, origRec)
 			}
 
 			// Add hash to map
-			uniqueHashes[hash] = struct{}{}
+			uniqueHashes[hash] = recordNumber
 		}
 
 		fmt.Println(rec)
