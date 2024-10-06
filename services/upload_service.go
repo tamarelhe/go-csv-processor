@@ -64,57 +64,9 @@ func generateRecordHash(record []string, descriptor domain.CSVFileDescriptor) ([
 	return record, hashString, nil
 }
 
-// Validate header length and columns position
-func validateHeader(header []string, descriptor domain.CSVFileDescriptor) error {
-	// Validates that the header matches the expected structure
-	if len(header) != len(descriptor.Columns) {
-		return fmt.Errorf("number of columns in the header (%d) does not match the expected structure (%d)", len(header), len(descriptor.Columns))
-	}
-	for i, col := range header {
-		if col != descriptor.Columns[i].Label {
-			return fmt.Errorf("column '%s' in the header does not match the expected '%s'", col, descriptor.Columns[i].Label)
-		}
-	}
-
-	return nil
-}
-
-// Validate line length and columns type
-func validateRecord(record []string, descriptor domain.CSVFileDescriptor) error {
-	var columnIsValid = false
-
-	// Validates that the record matches the expected structure
-	if len(record) != len(descriptor.Columns) {
-		return fmt.Errorf("record with incorrect number of columns: expected %d, but found %d", len(descriptor.Columns), len(record))
-	}
-
-	for i, col := range record {
-		switch descriptor.Columns[i].Type {
-		case domain.String:
-			columnIsValid = domain.IsString(col)
-		case domain.Int:
-			columnIsValid = domain.IsStringInteger(col)
-		case domain.Float:
-			columnIsValid = domain.IsStringFloat(col)
-		case domain.Date:
-			columnIsValid = domain.IsValidDateFormat(col)
-		case domain.DateTime:
-			columnIsValid = domain.IsValidDateTimeFormat(col)
-		default:
-			return fmt.Errorf("invalid column type definition %d", descriptor.Columns[i].Type)
-		}
-
-		if !columnIsValid {
-			return fmt.Errorf("invalid column type. value: %s and expected type: %s", col, descriptor.Columns[i].Type)
-		}
-	}
-
-	return nil
-}
-
 // Processes the CSV according to the domain and monitors progress
 func (s *UploadService) Upload(domain string, file io.Reader) (string, error) {
-	var recordNumber int
+	var headerMap map[string]int = make(map[string]int)
 	uniqueHashes := make(map[string]int)
 
 	uploadID := generateUploadID(domain)
@@ -150,54 +102,49 @@ func (s *UploadService) Upload(domain string, file io.Reader) (string, error) {
 	s.state[uploadID] = models.Ready
 	s.mu.Unlock()
 
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		return "", fmt.Errorf("error reading the header: %v", err)
+	}
+
+	if len(records) == 0 {
+		return "", fmt.Errorf("empty file")
+	}
+
 	if descriptor.HasHeader {
-		recordNumber++
-		header, err := csvReader.Read()
-		if err != nil {
-			return "", fmt.Errorf("error reading the header: %v", err)
+		headers := records[0]
+
+		for i, header := range headers {
+			headerMap[header] = i
 		}
 
-		if err = validateHeader(header, descriptor); err != nil {
+		if err = validateHeader(headerMap, descriptor); err != nil {
 			return "", fmt.Errorf("invalid fields: %v", err)
 		}
 	}
 
-	// Processes each line of the CSV
-	for {
-		recordNumber++
-
-		record, err := csvReader.Read()
-		if err == io.EOF {
-			break // End of file
-		}
-		if err != nil {
-			return "", fmt.Errorf("error reading CSV line: %v", err)
-		}
-
+	for i, record := range records[1:] {
 		// Validates record
-		if err = validateRecord(record, descriptor); err != nil {
-			return "", fmt.Errorf("invalid record [%d]: %v", recordNumber, err)
+		if err = validateRecord(headerMap, i, record, descriptor); err != nil {
+			return "", fmt.Errorf("invalid record [%d]: %v", i, err)
 		}
 
 		rec, hash, err := generateRecordHash(record, descriptor)
 		if err != nil {
-			return "", fmt.Errorf("invalid record [%d]: %v", recordNumber, err)
+			return "", fmt.Errorf("invalid record [%d]: %v", i, err)
 		}
 
 		if descriptor.ValidateUniqueness {
 			// Validates uniqueness of record
 			if origRec, exists := uniqueHashes[hash]; exists {
-				return "", fmt.Errorf("line %d is duplicated with line %d", recordNumber, origRec)
+				return "", fmt.Errorf("line %d is duplicated with line %d", i, origRec)
 			}
 
 			// Add hash to map
-			uniqueHashes[hash] = recordNumber
+			uniqueHashes[hash] = i
 		}
 
 		fmt.Println(rec)
-		//if err := processor.ProcessRecord(uploadID, record); err != nil {
-		//	return "", fmt.Errorf("erro ao processar linha: %v", err)
-		//}
 	}
 
 	// Parsing & staging
@@ -210,7 +157,7 @@ func (s *UploadService) Upload(domain string, file io.Reader) (string, error) {
 	s.state[uploadID] = models.Staged
 	s.mu.Unlock()
 
-	fmt.Printf("Processed %d records!", recordNumber)
+	fmt.Printf("Processed %d records!", len(records[1:]))
 
 	return uploadID, nil
 }

@@ -5,31 +5,51 @@ import (
 
 	"net/http"
 
+	"github.com/tamarelhe/go-csv-processor/test/files/lead_time"
 	"github.com/tamarelhe/go-csv-processor/test/files/purchase_order"
 
 	"github.com/tamarelhe/go-csv-processor/api"
 	"github.com/tamarelhe/go-csv-processor/domain"
+	"github.com/tamarelhe/go-csv-processor/domain/models"
 	"github.com/tamarelhe/go-csv-processor/services"
 )
 
 func main() {
 
 	// Inicializa os processadores específicos de domínio com as configurações desejadas
-	po_processor := purchase_order.NewPOProcessor(
+	poProcessor := purchase_order.NewPOProcessor(
 		true,
 		';',
-		[]domain.Column{
-			{Label: "supplier", Type: domain.String, IsInputColumn: true, KeyColumn: true},
-			{Label: "delivery_date", Type: domain.Date, IsInputColumn: true, KeyColumn: true},
-			{Label: "item", Type: domain.String, IsInputColumn: true, KeyColumn: true},
-			{Label: "location", Type: domain.Int, IsInputColumn: true, KeyColumn: true},
-			{Label: "quantity", Type: domain.Float, IsInputColumn: true, KeyColumn: false},
+		[]models.Column{
+			{Label: "supplier", Type: models.String, IsMandatory: true, IsInputColumn: true, KeyColumn: true},
+			{Label: "delivery_date", Type: models.Date, IsMandatory: true, IsInputColumn: true, KeyColumn: true},
+			{Label: "item", Type: models.String, IsMandatory: true, IsInputColumn: true, KeyColumn: true},
+			{Label: "location", Type: models.Int, IsMandatory: true, IsInputColumn: true, KeyColumn: true},
+			{Label: "quantity", Type: models.Float, IsMandatory: true, IsInputColumn: true, KeyColumn: false},
 		},
 		true,
 		false)
 
+	internalLeadTimeProcessor := lead_time.NewCfgInternalLeadTimeProcessor(
+		true,
+		';',
+		[]models.Column{
+			{Label: "operator", Type: models.String, IsMandatory: true, IsInputColumn: true, KeyColumn: false},
+			{Label: "supplier", Type: models.String, IsMandatory: true, IsInputColumn: true, KeyColumn: true},
+			{Label: "location", Type: models.String, IsMandatory: true, IsInputColumn: true, KeyColumn: true},
+			{Label: "review_date", Type: models.Date, IsMandatory: true, IsInputColumn: true, KeyColumn: false},
+			{Label: "review_day", Type: models.Int, IsMandatory: true, IsInputColumn: true, KeyColumn: true},
+			{Label: "delivery_day", Type: models.Int, IsMandatory: true, IsInputColumn: true, KeyColumn: false},
+			{Label: "min_intervel_weeks", Type: models.Int, IsMandatory: true, IsInputColumn: true, KeyColumn: false},
+			{Label: "lead_time", Type: models.Int, IsMandatory: false, IsInputColumn: false, KeyColumn: false},
+			{Label: "hash_control", Type: models.String, IsMandatory: false, IsInputColumn: true, KeyColumn: false},
+		},
+		true,
+		true)
+
 	processors := map[string]domain.CSVProcessor{
-		"purchase_order": po_processor,
+		"purchase_order":     poProcessor,
+		"internal_lead_time": internalLeadTimeProcessor,
 	}
 
 	// Inicializa os serviços genéricos

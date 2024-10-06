@@ -2,52 +2,15 @@ package domain
 
 import (
 	"io"
-	"strconv"
-	"time"
+
+	"github.com/tamarelhe/go-csv-processor/domain/models"
 )
-
-type ColumnType int
-
-const (
-	String ColumnType = iota
-	Int
-	Float
-	Date
-	DateTime
-)
-
-func (ct ColumnType) String() string {
-	switch ct {
-	case String:
-		return "String"
-	case Int:
-		return "Int"
-	case Float:
-		return "Float"
-	case Date:
-		return "Date with 'DD/MM/YYYY' format'"
-	case DateTime:
-		return "DateTime with 'DD/MM/YYYY HH24:MI:SS' format"
-	default:
-		return "Unknown"
-	}
-}
-
-const FormatDate = "02/01/2006"
-const FormatDateTime = "02/01/2006 15:04:05"
-
-type Column struct {
-	Label         string
-	Type          ColumnType
-	IsInputColumn bool
-	KeyColumn     bool
-}
 
 // Describes the structure of a CSV file
 type CSVFileDescriptor struct {
 	HasHeader          bool
 	Delimiter          rune
-	Columns            []Column
+	Columns            []models.Column
 	ValidateUniqueness bool
 	CUDControl         bool
 }
@@ -67,7 +30,7 @@ type CSVProcessor interface {
 	GetDescriptor() CSVFileDescriptor
 }
 
-func NewBaseCSVProcessor(hasHeader bool, delimiter rune, columns []Column, validateUniqueness bool, cudControl bool) *CSVFileDescriptor {
+func NewBaseCSVProcessor(hasHeader bool, delimiter rune, columns []models.Column, validateUniqueness bool, cudControl bool) *CSVFileDescriptor {
 	return &CSVFileDescriptor{
 		HasHeader:          hasHeader,
 		Delimiter:          delimiter,
@@ -75,31 +38,4 @@ func NewBaseCSVProcessor(hasHeader bool, delimiter rune, columns []Column, valid
 		ValidateUniqueness: validateUniqueness,
 		CUDControl:         cudControl,
 	}
-}
-
-func IsValidDateFormat(dateStr string) bool {
-	_, err := time.Parse(FormatDate, dateStr)
-
-	return err == nil
-}
-
-func IsValidDateTimeFormat(dateTimeStr string) bool {
-	_, err := time.Parse(FormatDateTime, dateTimeStr)
-
-	return err == nil
-}
-
-func IsString(value interface{}) bool {
-	_, ok := value.(string)
-	return ok
-}
-
-func IsStringInteger(value string) bool {
-	_, err := strconv.Atoi(value)
-	return err == nil
-}
-
-func IsStringFloat(value string) bool {
-	_, err := strconv.ParseFloat(value, 64)
-	return err == nil
 }
